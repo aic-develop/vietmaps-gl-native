@@ -13,6 +13,9 @@ namespace {
 const char* protocol = "mapbox://";
 const std::size_t protocolLength = 9;
 
+const char* vietmapsProtocol = "vietmap://";
+const std::size_t vietmapsProtocolLength = 10;
+
 } // namespace
 
 namespace mbgl {
@@ -23,6 +26,10 @@ bool isMapboxURL(const std::string& url) {
     return url.compare(0, protocolLength, protocol) == 0;
 }
 
+bool isVietmapURL(const std::string& url) {
+    return url.compare(0, vietmapsProtocolLength, vietmapsProtocol) == 0;    
+}
+
 static bool equals(const std::string& str, const URL::Segment& segment, const char* ref) {
     return str.compare(segment.first, segment.second, ref) == 0;
 }
@@ -30,6 +37,16 @@ static bool equals(const std::string& str, const URL::Segment& segment, const ch
 std::string normalizeSourceURL(const std::string& baseURL,
                                const std::string& str,
                                const std::string& accessToken) {
+    if (isVietmapURL(str)) {
+        if (accessToken.empty()) {
+            throw std::runtime_error(
+                "You must provide a Mapbox API access token for Mapbox tile sources");
+        }
+        const URL url(str);
+        const auto tpl = baseURL + "/{domain}?access_token=" + accessToken + "&secure";
+        return transformURL(tpl, str, url);
+    }
+                                   
     if (!isMapboxURL(str)) {
         return str;
     }
@@ -46,6 +63,12 @@ std::string normalizeSourceURL(const std::string& baseURL,
 std::string normalizeStyleURL(const std::string& baseURL,
                               const std::string& str,
                               const std::string& accessToken) {
+    if (isVietmapURL(str)) {
+        const URL url(str);
+        const auto tpl = baseURL + "/styles{path}?access_token=" + accessToken;
+        return transformURL(tpl, str, url);
+    }
+
     if (!isMapboxURL(str)) {
         return str;
     }
@@ -63,6 +86,12 @@ std::string normalizeStyleURL(const std::string& baseURL,
 std::string normalizeSpriteURL(const std::string& baseURL,
                                const std::string& str,
                                const std::string& accessToken) {
+    if (isVietmapURL(str)) {
+        const URL url(str);
+        const auto tpl = baseURL + "/styles{directory}{filename}/sprite{extension}?access_token=" + accessToken;
+        return transformURL(tpl, str, url);
+    }
+
     if (!isMapboxURL(str)) {
         return str;
     }
@@ -81,6 +110,12 @@ std::string normalizeSpriteURL(const std::string& baseURL,
 std::string normalizeGlyphsURL(const std::string& baseURL,
                                const std::string& str,
                                const std::string& accessToken) {
+    if (isVietmapURL(str)) {
+        const URL url(str);
+        const auto tpl = baseURL + "/fonts{path}?access_token=" + accessToken;
+        return transformURL(tpl, str, url);
+    }
+                                   
     if (!isMapboxURL(str)) {
         return str;
     }
@@ -98,6 +133,11 @@ std::string normalizeGlyphsURL(const std::string& baseURL,
 std::string normalizeTileURL(const std::string& baseURL,
                              const std::string& str,
                              const std::string& accessToken) {
+    if (isVietmapURL(str)) {
+        const URL url(str);
+        const auto tpl = baseURL + "/v1{path}?access_token=" + accessToken;
+        return transformURL(tpl, str, url);        
+    }
     if (!isMapboxURL(str)) {
         return str;
     }
